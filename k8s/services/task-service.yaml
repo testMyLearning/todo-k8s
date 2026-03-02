@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-service
+  namespace: todo-app
+  labels:
+    app: task-service
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-service
+  template:
+    metadata:
+      labels:
+        app: task-service
+    spec:
+      containers:
+        - name: task-service
+          image: radiodnov/task-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: kubernetes
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://pgbouncer-task:5432/task_db
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: jwt_secret
+            - name: KAFKA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-secret
+                  key: kafka_user
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-secret
+                  key: kafka_password
+            - name: USER_SERVICE_URL
+              value: http://user-service:8081
+          volumeMounts:
+            - name: config
+              mountPath: /common-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: config
+          configMap:
+            name: common-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-service
+  namespace: todo-app
+  labels:
+    app: task-service
+spec:
+  ports:
+    - port: 8082
+      targetPort: 8082
+      name: http
+  selector:
+    app: task-service

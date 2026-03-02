@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-task-config
+  namespace: todo-app
+data:
+  pgbouncer.ini: |
+    [databases]
+    task_db = host=postgres-task port=5432 dbname=task_db
+    
+    [pgbouncer]
+    listen_port = 5432
+    listen_addr = 0.0.0.0
+    auth_type = trust
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 10000
+    default_pool_size = 50
+    server_idle_timeout = 600
+    server_lifetime = 3600
+    query_timeout = 30
+    idle_transaction_timeout = 60
+
+  userlist.txt: |
+    "postgres" "postgres"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-task
+  namespace: todo-app
+  labels:
+    app: pgbouncer-task
+    component: pgbouncer
+    service: task-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-task
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-task
+        component: pgbouncer
+    spec:
+      containers:
+        - name: pgbouncer
+          image: edoburu/pgbouncer:latest
+          ports:
+            - containerPort: 5432
+          env:
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: DB_HOST
+              value: postgres-task
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: task_db
+            - name: POOL_MODE
+              value: transaction
+            - name: MAX_CLIENT_CONN
+              value: "10000"
+            - name: DEFAULT_POOL_SIZE
+              value: "50"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          readinessProbe:  # ← проверка что pgbouncer готов
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer
+      volumes:
+        - name: config
+          configMap:
+            name: pgbouncer-task-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-task
+  namespace: todo-app
+  labels:
+    app: pgbouncer-task
+    component: pgbouncer
+    service: task-db
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: pgbouncer
+  selector:
+    app: pgbouncer-task

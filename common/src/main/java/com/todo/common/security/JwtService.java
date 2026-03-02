@@ -29,7 +29,7 @@ public class JwtService {
     public JwtService() {
         jwtSecret= SecretService.getSecret("jwt_secret");
         jwtExpirationMs = 86400000;
-        log.info("✅ JwtService initialized with secret from /run/secrets/jwt_secret");
+        log.info("✅ JwtService initialized with secret from ENV");
     }
 
     private final long jwtExpirationMs;

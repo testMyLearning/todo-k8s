@@ -1,0 +1,94 @@
+# k8s/databases/pgbouncer-user.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-user-config
+  namespace: todo-app
+data:
+  pgbouncer.ini: |
+    [databases]
+    user_db = host=postgres-user port=5432 dbname=user_db
+    
+    [pgbouncer]
+    listen_port = 5432
+    listen_addr = 0.0.0.0
+    auth_type = trust
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 10000
+    default_pool_size = 50
+    server_idle_timeout = 600
+
+  userlist.txt: |
+    "postgres" "postgres"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-user
+  namespace: todo-app
+  labels:
+    app: pgbouncer-user
+    component: pgbouncer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-user
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-user
+    spec:
+      containers:
+        - name: pgbouncer
+          image: edoburu/pgbouncer:latest
+          ports:
+            - containerPort: 5432
+          env:
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: DB_HOST
+              value: postgres-user
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: user_db
+            - name: POOL_MODE
+              value: transaction
+            - name: MAX_CLIENT_CONN
+              value: "10000"
+            - name: DEFAULT_POOL_SIZE
+              value: "50"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer
+      volumes:
+        - name: config
+          configMap:
+            name: pgbouncer-user-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-user
+  namespace: todo-app
+  labels:
+    app: pgbouncer-user
+    component: pgbouncer
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: pgbouncer
+  selector:
+    app: pgbouncer-user

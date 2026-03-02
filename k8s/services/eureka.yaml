@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-server
+  namespace: todo-app
+  labels:
+    app: eureka-server
+    component: service-discovery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka-server
+  template:
+    metadata:
+      labels:
+        app: eureka-server
+    spec:
+      containers:
+        - name: eureka-server
+          image: radiodnov/eureka-server:latest
+          ports:
+            - containerPort: 8761
+          env:
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: eureka-server
+            - name: SPRING_PROFILES_ACTIVE
+              value: kubernetes
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 60
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-server
+  namespace: todo-app
+  labels:
+    app: eureka-server
+spec:
+  ports:
+    - port: 8761
+      targetPort: 8761
+      name: eureka
+  selector:
+    app: eureka-server

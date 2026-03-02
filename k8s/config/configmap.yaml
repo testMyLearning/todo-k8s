@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: common-config
+  namespace: todo-app
+data:
+  application.yml: |
+    # ========== EUREKA ==========
+    eureka:
+      client:
+        service-url:
+          defaultZone: http://eureka-server:8761/eureka/
+      instance:
+        prefer-ip-address: true
+    
+    # ========== ACTUATOR ==========
+    management:
+      tracing:
+        enabled: true
+        sampling:
+          probability: 1.0
+      zipkin:
+        tracing:
+          endpoint: http://zipkin:9411/api/v2/spans
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus
+      metrics:
+        enable:
+          jdbc: true
+          hikaricp: true
+        export:
+          prometheus:
+            enabled: true
+        tags:
+          application: ${spring.application.name}
+    
+    # ========== OPENAPI ==========
+    springdoc:
+      api-docs:
+        path: /api-docs
+        enabled: true
+      swagger-ui:
+        path: /swagger-ui.html
+        enabled: true
+        operations-sorter: method
+        tags-sorter: alpha
+    
+    # ========== RESILIENCE4J ==========
+    resilience4j:
+      circuitbreaker:
+        instances:
+          userServiceGateway:
+            registerHealthIndicator: true
+            slidingWindowSize: 20
+            failureRateThreshold: 40
+            waitDurationInOpenState: 30s
+      timelimiter:
+        instances:
+          userServiceGateway:
+            timeoutDuration: 3s
+          taskServiceGateway:
+            timeoutDuration: 5s
+    
+    # ========== LOGGING ==========
+    logging:
+      level:
+        com.todo: DEBUG
+        org.springframework.cloud.gateway: DEBUG
+      pattern:
+        level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    
+    # ========== SPRING ==========
+    spring:
+      kafka:
+        bootstrap-servers: kafka.todo-app.svc.cluster.local:9092
+        properties:
+          security.protocol: SASL_PLAINTEXT
+          sasl.mechanism: SCRAM-SHA-256
+          sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username='${KAFKA_USER}' password='${KAFKA_PASSWORD}';
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+          retries: 3
+          acks: all
+        consumer:
+          group-id: ${spring.application.name}
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          auto-offset-reset: earliest
+          enable-auto-commit: false

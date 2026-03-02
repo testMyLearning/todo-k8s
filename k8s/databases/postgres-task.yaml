@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-task
+  namespace: todo-app
+  labels:
+    app: postgres-task
+    component: database
+    service: task-db
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: postgres-task
+  clusterIP: None  # Headless service для StatefulSet
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-task
+  namespace: todo-app
+  labels:
+    app: postgres-task
+    component: database
+    service: task-db
+spec:
+  serviceName: postgres-task
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-task
+  template:
+    metadata:
+      labels:
+        app: postgres-task
+        component: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15.8
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: task_db  # ←唯一 отличие от user: другая БД
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:  # ← ДОБАВЛЯЕМ проверку готовности
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:   # ← проверка живости
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
