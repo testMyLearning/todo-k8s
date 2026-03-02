@@ -19,6 +19,7 @@ spec:
       containers:
         - name: task-service
           image: radiodnov/task-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8082
           env:

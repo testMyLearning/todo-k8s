@@ -19,6 +19,7 @@ spec:
       containers:
         - name: user-service
           image: radiodnov/user-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8081
           env:

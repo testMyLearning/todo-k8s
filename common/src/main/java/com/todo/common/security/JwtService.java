@@ -27,7 +27,7 @@ public class JwtService {
 
     private final String jwtSecret;
     public JwtService() {
-        jwtSecret= SecretService.getSecret("jwt_secret");
+        jwtSecret= SecretService.getSecret("JWT_SECRET");
         jwtExpirationMs = 86400000;
         log.info("✅ JwtService initialized with secret from ENV");
     }

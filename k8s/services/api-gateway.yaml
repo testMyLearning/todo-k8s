@@ -19,32 +19,25 @@ spec:
       containers:
         - name: api-gateway
           image: radiodnov/api-gateway:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
           env:
-            # ===== JWT Secret =====
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: jwt-secret
                   key: jwt_secret
-
-            # ===== URL-ы сервисов =====
             - name: USER_SERVICE_URL
               value: http://user-service:8081
             - name: TASK_SERVICE_URL
               value: http://task-service:8082
-
-            # ===== Профиль =====
             - name: SPRING_PROFILES_ACTIVE
               value: kubernetes
-
           volumeMounts:
             - name: config
               mountPath: /common-config
-
           resources:
             requests:
               memory: "256Mi"
@@ -52,21 +45,18 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
-
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
             initialDelaySeconds: 60
             periodSeconds: 20
-
       volumes:
         - name: config
           configMap:
@@ -80,10 +70,11 @@ metadata:
   labels:
     app: api-gateway
 spec:
-  type: ClusterIP
+  type: NodePort  # ← ИЗМЕНЕНО: теперь здесь!
   ports:
     - port: 8080
       targetPort: 8080
+      nodePort: 30080  # ← порт для доступа снаружи
       name: http
   selector:
     app: api-gateway
