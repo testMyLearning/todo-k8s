@@ -284,7 +284,6 @@ services:
       replicas: 1
   pgbouncer-task:
     image: edoburu/pgbouncer:latest
-    container_name: pgbouncer-task
     environment:
       DB_USER: postgres
       DB_PASSWORD: postgres
@@ -307,7 +306,6 @@ services:
 
   pgbouncer-user:
     image: edoburu/pgbouncer:latest
-    container_name: pgbouncer-user
     environment:
       DB_USER: postgres
       DB_PASSWORD: postgres
@@ -330,7 +328,6 @@ services:
 
   pgbouncer-analytics:
     image: edoburu/pgbouncer:latest
-    container_name: pgbouncer-analytics
     environment:
       DB_USER: postgres
       DB_PASSWORD: postgres
