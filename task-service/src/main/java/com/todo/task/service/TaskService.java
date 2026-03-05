@@ -15,6 +15,7 @@ import com.todo.task.mapper.TaskMapper;
 import com.todo.task.repository.OutboxRepository;
 import com.todo.task.repository.TaskRepository;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +25,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
+
+import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 
 @Service
 @Slf4j
@@ -75,6 +79,8 @@ public class TaskService {
 @Observed(name="update")
     @Transactional
     public TaskDto update(@Valid UpdateTaskRequest request, Long userId) {
+
+    try {
         Task task = taskRepository.findById(request.id())
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
@@ -101,9 +107,15 @@ public class TaskService {
 
         log.info("Task updated with id: {}", savedTask.getId());
         return taskMapper.toDto(savedTask);
+    } catch (OptimisticLockException e) {
+        // Кто-то уже изменил задачу
+        log.warn("Conflict updating task {} for user {}",
+                request.id(), userId);
+        throw new OptimisticLockException("занято");
     }
+}
 @Observed(name ="sendEvent")
-    // Вынесли логику отправки события, чтобы не дублировать код
+@Transactional(propagation = MANDATORY)
     private void sendEvent(Task task, Long userId, String eventType) {
         TaskEvent event = new TaskEvent(
                 task.getId(),

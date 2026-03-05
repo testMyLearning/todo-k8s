@@ -50,13 +50,13 @@ spec:
               path: /actuator/health
               port: 8080
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 30
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
             initialDelaySeconds: 60
-            periodSeconds: 20
+            periodSeconds: 30
       volumes:
         - name: config
           configMap:
@@ -70,11 +70,9 @@ metadata:
   labels:
     app: api-gateway
 spec:
-  type: NodePort  # ← ИЗМЕНЕНО: теперь здесь!
+  type: NodePort
   ports:
     - port: 8080
-      targetPort: 8080
-      nodePort: 30080  # ← порт для доступа снаружи
       name: http
   selector:
     app: api-gateway
@@ -84,11 +82,10 @@ kind: Ingress
 metadata:
   name: api-gateway-ingress
   namespace: todo-app
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - http:
+    - host: todo.local  # ← ИСПРАВЛЕНО: правильный отступ
+      http:
         paths:
           - path: /
             pathType: Prefix

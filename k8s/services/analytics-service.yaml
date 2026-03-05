@@ -69,13 +69,13 @@ spec:
               path: /actuator/health
               port: 8085
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 30
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8085
             initialDelaySeconds: 60
-            periodSeconds: 20
+            periodSeconds: 30
       volumes:
         - name: config
           configMap:

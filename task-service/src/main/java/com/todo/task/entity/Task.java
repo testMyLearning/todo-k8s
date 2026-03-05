@@ -26,6 +26,9 @@ public class Task {
     @Column(length = 1000)
     private String description;
 
+    @Version
+    private Long version;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusTask status = StatusTask.ACTIVE;

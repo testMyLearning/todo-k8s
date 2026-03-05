@@ -1,0 +1,40 @@
+# k8s/monitoring/zipkin.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin-service
+  namespace: todo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zipkin-service
+  template:
+    metadata:
+      labels:
+        app: zipkin-service
+    spec:
+      containers:
+        - name: zipkin
+          image: openzipkin/zipkin:latest
+          ports:
+            - containerPort: 9411
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin-service
+  namespace: todo-app
+spec:
+  ports:
+    - port: 9411
+      targetPort: 9411
+  selector:
+    app: zipkin-service

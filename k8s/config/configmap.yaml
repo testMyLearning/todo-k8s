@@ -21,7 +21,7 @@ data:
           probability: 1.0
       zipkin:
         tracing:
-          endpoint: http://zipkin:9411/api/v2/spans
+          endpoint: http://zipkin-service:9411/api/v2/spans
       endpoints:
         web:
           exposure:
@@ -59,7 +59,7 @@ data:
       timelimiter:
         instances:
           userServiceGateway:
-            timeoutDuration: 3s
+            timeoutDuration: 5s
           taskServiceGateway:
             timeoutDuration: 5s
     

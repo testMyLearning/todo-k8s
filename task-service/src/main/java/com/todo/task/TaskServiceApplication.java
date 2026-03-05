@@ -1,5 +1,6 @@
 package com.todo.task;
 
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -14,6 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class TaskServiceApplication {
     public static void main(String[] args) {
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
-        SpringApplication.run(TaskServiceApplication.class, args);
+        SpringApplication application = new SpringApplication(TaskServiceApplication.class);
+        application.setLogStartupInfo(false);
+        application.setBannerMode(Banner.Mode.OFF);
+        application.run(args);
     }
 }
