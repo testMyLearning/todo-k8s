@@ -147,7 +147,7 @@ public class TaskServiceTest {
         savedTask.setStatus(StatusTask.ACTIVE);
         savedTask.setUserId(userId);
 
-    when(mapper.toEntity(createTaskRequest)).thenReturn(savedTask);
+    when(mapper.toEntity(any(CreateTaskRequest.class))).thenReturn(savedTask);
     when(mapper.toDto(any(Task.class))).thenReturn(expectedDto);
     when(taskRepository.save(any(Task.class))).thenReturn(savedTask);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");

@@ -95,4 +95,3 @@ spec:
       name: http
   selector:
     app: task-service
-    XXX0512649762

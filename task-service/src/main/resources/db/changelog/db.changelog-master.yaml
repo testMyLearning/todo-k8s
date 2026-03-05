@@ -1,3 +1,3 @@
 databaseChangeLog:
-  include:
-    file: classpath:/db/changelog/first-changeset.yaml
+  - include:
+      file: classpath:/db/changelog/first-changeset.yaml
